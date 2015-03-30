@@ -9,47 +9,24 @@ import Queue
 
 import threading
 
-class WalkThread(threading.Thread):
-
-  def __init__(self, q):
-    super(WalkThread, self).__init__()
-    self.queue = q
-
-  def run(self):
-    while True:
-      n = self.queue.qsize()
-      if n != 0:
-        print n
-        walkstop(n)
-        while not self.queue.empty():
-          self.queue.get()
-
-def walkstop(sec):
-  com = serial.Serial('/dev/ttyAMA0', 57600, timeout = 1)
-  com.write("#M1")
-  time.sleep(sec)
-  com.write("#M0")
-
-def walk(sec):
-  com = serial.Serial('/dev/ttyAMA0', 57600, timeout = 10)
-  com.write("#M1")
-  time.sleep(sec)
-
-def stop():
-  com = serial.Serial('/dev/ttyAMA0', 57600, timeout = 10)
-  com.write("#M0")
-
-
-queue = Queue.Queue()
-thread = WalkThread(queue)
-thread.start()
-
 userdict = {}
+total = 0
+
+
+import cgi,urllib
+
+def yoAll(apitokenvalue):
+  reqdata = {}
+  reqdata['api_token'] = apitokenvalue # YoのAPI_token
+  params = urllib.urlencode(reqdata)
+  urllib.urlopen("http://api.justyo.co/yoall/",params)
+
 
 
 
 @route('/')
 def getYo():
+  global total
   username = request.query['username']
   print username
 
@@ -61,7 +38,20 @@ def getYo():
   print username + ': ' + str(userdict[username])
   # print len(userdict)
   # print 'total: ' + str(
-  queue.put(username)
+  total += 1
+  if total == 1:
+    com = serial.Serial('/dev/ttyAMA0', 57600, timeout = 0)
+    com.write("#M1")
+
+  if total == 50:
+    yoAll("3e54a635-8751-4c7f-a668-c307d6e0636c")
+    com = serial.Serial('/dev/ttyAMA0', 57600, timeout = 0)
+    com.write("#M5")
+
+  if username == "AMUTAKE":
+    com = serial.Serial('/dev/ttyAMA0', 57600, timeout = 0)
+    com.write("#M0")
+    
 
   # walkstop()
   # if username == "AMUTAKE":
